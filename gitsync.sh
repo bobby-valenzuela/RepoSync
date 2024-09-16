@@ -60,7 +60,7 @@ while :; do
     current_branch=$(cd ${local} && git branch 2>/dev/null | grep '*' | awk '{print $2}' | xargs)
 
     # Skip if no branch found  or if master (only feature branches sync)
-    [[ -z "${current_branch}" || "${current_branch}" == 'master' ]] && continue
+    [[ -z "${current_branch}" || "${current_branch}" == 'master' || "${current_branch}" == 'main' ]] && continue
 
     # Before continuing let's push what we have up
     if [[ -z "${COMMIT_MSG}" ]]; then
