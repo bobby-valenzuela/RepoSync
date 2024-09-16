@@ -13,7 +13,8 @@
 
 # Define globals
 COUNT=0
-LIMIT=10000 # [optional] 1000 iterations = ~ 7.5hrs
+LIMIT=10000 # 1000 iterations = ~ 7.5hrs
+NAP_TIME=3  # 3 seconds per iteration
 COMMIT_MSG=$1
 
 JSON='[
@@ -121,6 +122,6 @@ while :; do
   # Stop if we've reached defined LIMIT
   [[ $COUNT -ge $LIMIT ]] && exit
 
-  sleep 3
+  sleep ${NAP_TIME}
 
 done
