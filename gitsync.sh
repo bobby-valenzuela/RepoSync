@@ -13,8 +13,8 @@
 
 # Define globals
 COUNT=0
-LIMIT=$1
-COMMIT_MSG=$2
+LIMIT=10000 # [optional] 1000 iterations = ~ 7.5hrs
+COMMIT_MSG=$1
 
 JSON='[
     {
@@ -112,6 +112,9 @@ while :; do
     fi
 
   done
+
+  # If we've been passed a commit msg - this is a once-off
+  [[ -z "${COMMIT_MSG}" ]] && exit
 
   ((COUNT++))
 
