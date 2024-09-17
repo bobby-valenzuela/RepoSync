@@ -16,7 +16,7 @@
 LOCAL_ROOT='/home/bobby/pbx/'
 
 # Root directory where all of your local git repos reside
-REMOTE_ROOT='/home/control-io/www/'
+REMOTE_ROOT='/home/control-io/'
 
 # Define dirs to sync (dir must be the same on both local/remote)
 JSON='[
