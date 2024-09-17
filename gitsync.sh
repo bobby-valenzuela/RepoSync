@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 
 # Author : Bobby Valenzuela
-# Created : 20th June 2023
-# Last Modified : 20th June 2023
+# Created : 16th Septemper 2024
 
 # Description:
 # List all of the available hosts in your SSH config file and select one to connect to from numbered list.
@@ -15,7 +14,8 @@
 COUNT=0
 LIMIT=10000 # 1000 iterations = ~ 7.5hrs
 NAP_TIME=3  # 3 seconds per iteration
-COMMIT_MSG=$1
+LOCAL_DIR_FORCED=$1
+COMMIT_MSG=$2
 
 JSON='[
     {
@@ -53,6 +53,14 @@ while :; do
     local=$(echo "$obj" | jq -r '.local_dir')
     remote=$(echo "$obj" | jq -r '.remote_dir')
 
+    # Skip if processing a manual Update
+    echo "VALUES: 1: ${LOCAL_DIR_FORCED} | 2: ${local}" 
+    if [[ ! -z "${LOCAL_DIR_FORCED}" && "${LOCAL_DIR_FORCED}" != "${local}" ]]; then
+      continue
+    fi
+
+    echo "Processing: ${hostname} | ${local}"
+
     # Skip if local dir doesn't exist
     [[ ! -d ${local} ]] && continue
 
@@ -67,6 +75,8 @@ while :; do
       COMMIT_MSG="Testing/Debugging"
     fi
     cd ${local} && git add -A && git commit -m "${COMMIT_MSG}" && git push --set-upstream origin ${current_branch}
+
+    echo here1
 
     # Replace any fwd-slashes with underscores
     local_escaped=$(printf ${local////_})
@@ -87,8 +97,8 @@ while :; do
       # - Check out branch
       # - Pull down latest on that branch
 
-      ssh ${hostname} "cd ${remote} && git stash save && git checkout master && git checkout -b ${current_branch}" # Create branch
-      ssh ${hostname} "cd ${remote} && git checkout ${current_branch} && git branch --set-upstream-to=origin/${current_branch} ${current_branch} && git pull && echo synced"
+      #ssh ${hostname} "cd ${remote} && git stash save && git checkout master && git checkout -b ${current_branch}" # Create branch
+      #ssh ${hostname} "cd ${remote} && git checkout ${current_branch} && git branch --set-upstream-to=origin/${current_branch} ${current_branch} && git pull && echo synced"
 
     else
 
@@ -113,10 +123,10 @@ while :; do
     fi
 
   done
-
+echo almostdone
   # If we've been passed a commit msg - this is a once-off
-  [[ -z "${COMMIT_MSG}" ]] && exit
-
+  [[  ! -z "${LOCAL_DIR_FORCED}" ]] && exit
+echo "wentthrougboth"
   ((COUNT++))
 
   # Stop if we've reached defined LIMIT
