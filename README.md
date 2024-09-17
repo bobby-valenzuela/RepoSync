@@ -34,23 +34,36 @@ In the script you'll find a JSON variable like so:
 ```bash
 JSON='[
     {
-      "hostname":"alpha",
-      "local_dir":"/home/bobby/pbx/c4",
-      "remote_dir":"/home/control-io/www"
+      "hostname":"ubuntu-vm",
+      "dir":"project1"
     },
     {
-      "hostname":"alpha",
-      "local_dir":"/home/bobby/pbx/voutlook365",
-      "remote_dir":"/home/control-io/voutlook365"
+      "hostname":"ubuntu-vm",
+      "dir":"project2"
+    },
+    {
+      "hostname":"ubuntu-vm2",
+      "dir":"project3"
     }
 ]'
 ```
 For each item in the JSON array, there are three key/value pairs:
-- local_dir: The directory on your local machine in which a git repo is located
-- remote_dir: The directory on your remote machine in which the same git repo is located
+- dir: The name of the directory on your local/remote machine in which a git repo is located
 - hostname: The hostname as it appears in your `.ssh/config file`. This will be used to ssh into your machine and sync things up.
 
 You could even pipe a file into `JSON` if you want to save your details in a separate file.
+
+<br />
+
+In the script you'll also see some variables to define:
+```bash
+# Root directory where all of your local git repos reside
+LOCAL_ROOT='/home/bobby/my_repos/'
+
+# Root directory where all of your local git repos reside
+REMOTE_ROOT='/home/ubuntu/projects/'
+```
+
 
 <br />
 
