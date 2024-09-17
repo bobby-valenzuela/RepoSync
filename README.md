@@ -89,3 +89,5 @@ _Manual Mode_
 ```bash
 gitsync <local_dir> "<commit_msg>"
 ```
+
+Example: `gitsync project1 "My awesome feature"`
