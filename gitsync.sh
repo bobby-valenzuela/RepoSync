@@ -171,7 +171,7 @@ while :; do
         local_dir_sizes[${local_escaped}]=${current_size}
         
         # If we're here done the initial steps - just pull
-        ssh ${hostname} "cd ${remote} && git branch --set-upstream-to=origin/${current_branch} ${current_branch} && git pull && echo synced"
+        ssh ${hostname} "cd ${remote} && git branch --set-upstream-to=origin/${current_branch} ${current_branch} && git pull origin ${current_branch} && echo synced"
 
       elif [[ ${local_dir_files[${local_escaped}]} -ne ${current_num_of_files} ]]; then
 
@@ -179,7 +179,7 @@ while :; do
         local_dir_files[${local_escaped}]=${current_num_of_files}
         
         # If we're here done the initial steps - just pull
-        ssh ${hostname} "cd ${remote} && git branch --set-upstream-to=origin/${current_branch} ${current_branch} && git pull && echo synced"
+        ssh ${hostname} "cd ${remote} && git branch --set-upstream-to=origin/${current_branch} ${current_branch} && git pull origin ${current_branch} && echo synced"
       fi
 
     fi
