@@ -47,8 +47,8 @@ JSON='[
 ```
 For each item in the JSON array, there are three key/value pairs:
 - local_dir: The directory on your local machine in which a git repo is located
-- remote_dir: The directoy on your remote machine in which the same git repo is located
-- hostname: The hostname as it appears in youe `.ssh/config file`. This will be used to ssh into your machine and sync things up.
+- remote_dir: The directory on your remote machine in which the same git repo is located
+- hostname: The hostname as it appears in your `.ssh/config file`. This will be used to ssh into your machine and sync things up.
 
 You could even pipe a file into `JSON` if you want to save your details in a separate file.
 
