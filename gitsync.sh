@@ -9,26 +9,88 @@
 # Requires 'jq' => sudo apt-get install jq -y
 
 #############################################################################
+# =========== CONFIG ===========
+# Enter your path details here:
 
-# Define globals
-COUNT=0
-LIMIT=10000 # 1000 iterations = ~ 7.5hrs
-NAP_TIME=3  # 3 seconds per iteration
-LOCAL_DIR_FORCED=$1
-COMMIT_MSG=$2
+# Root directory where all of your local git repos reside
+LOCAL_ROOT='/home/bobby/pbx/'
 
+# Root directory where all of your local git repos reside
+REMOTE_ROOT='/home/control-io/www/'
+
+# Define dirs to sync (dir must be the same on both local/remote)
 JSON='[
     {
       "hostname":"alpha",
-      "local_dir":"/home/bobby/pbx/c4",
-      "remote_dir":"/home/control-io/www"
+      "dir":"api"
     },
     {
       "hostname":"alpha",
-      "local_dir":"/home/bobby/pbx/voutlook365",
-      "remote_dir":"/home/control-io/voutlook365"
+      "dir":"biltong-server"
+    },
+    {
+      "hostname":"alpha",
+      "dir":"c4"
+    },
+    {
+      "hostname":"alpha",
+      "dir":"cloudprograms"
+    },
+    {
+      "hostname":"alpha",
+      "dir":"cloudside-commonfiles-v1"
+    },
+    {
+      "hostname":"alpha",
+      "dir":"control"
+    },
+    {
+      "hostname":"alpha",
+      "dir":"internal-api"
+    },
+    {
+      "hostname":"alpha",
+      "dir":"metabase-tools"
+    },
+    {
+      "hostname":"alpha",
+      "dir":"scout"
+    },
+    {
+      "hostname":"alpha",
+      "dir":"thincontroller"
+    },
+    {
+      "hostname":"alpha",
+      "dir":"vccprograms"
+    },
+    {
+      "hostname":"alpha",
+      "dir":"vccuserupdate"
+    },
+    {
+      "hostname":"alpha",
+      "dir":"voutlook365"
     }
 ]'
+
+# ======== END CONFIG ============
+#############################################################################
+
+# Checks for any arguments passed in
+LOCAL_DIR_FORCED=""
+
+if [[ ! -z "$1" ]]; then
+  LOCAL_DIR_FORCED="${LOCAL_ROOT}$1"
+fi
+COMMIT_MSG=$2
+
+
+# Auto-mode interation details
+COUNT=0
+NAP_TIME=5  # 5 seconds per iteration
+LIMIT=1000 # 100 iterations = ~83mins
+
 
 # Define Associative arrays to hold file count/dir size info
 unset local_dir_sizes
@@ -50,17 +112,19 @@ while :; do
   for obj in ${json_array[@]}; do
 
     hostname=$(echo "$obj" | jq -r '.hostname')
-    local=$(echo "$obj" | jq -r '.local_dir')
-    remote=$(echo "$obj" | jq -r '.remote_dir')
+    current_dir=$(echo "$obj" | jq -r '.dir')
+    
+    # Set proper local/remote paths``
+    local="${LOCAL_ROOT}${current_dir}"
+    remote="${REMOTE_ROOT}${current_dir}"
 
     # Skip if processing a manual Update
-    echo "VALUES: 1: ${LOCAL_DIR_FORCED} | 2: ${local}" 
     if [[ ! -z "${LOCAL_DIR_FORCED}" && "${LOCAL_DIR_FORCED}" != "${local}" ]]; then
       continue
     fi
 
-    echo "Processing: ${hostname} => ${local}"
-
+    echo -e "\n[VALUES] Forced: ${LOCAL_DIR_FORCED} | Local: ${local} | Remote: ${remote}" 
+    
     # Skip if local dir doesn't exist
     [[ ! -d ${local} ]] && continue
 
@@ -95,7 +159,6 @@ while :; do
       # - Pull down latest from master
       # - Check out branch
       # - Pull down latest on that branch
-
       ssh ${hostname} "cd ${remote} && git stash save && git checkout master && git checkout -b ${current_branch}" # Create branch
       ssh ${hostname} "cd ${remote} && git checkout ${current_branch} && git branch --set-upstream-to=origin/${current_branch} ${current_branch} && git pull && echo synced"
 
@@ -106,7 +169,7 @@ while :; do
 
         # Update size in dict
         local_dir_sizes[${local_escaped}]=${current_size}
-
+        
         # If we're here done the initial steps - just pull
         ssh ${hostname} "cd ${remote} && git branch --set-upstream-to=origin/${current_branch} ${current_branch} && git pull && echo synced"
 
@@ -114,7 +177,7 @@ while :; do
 
         # Update file count in dict
         local_dir_files[${local_escaped}]=${current_num_of_files}
-
+        
         # If we're here done the initial steps - just pull
         ssh ${hostname} "cd ${remote} && git branch --set-upstream-to=origin/${current_branch} ${current_branch} && git pull && echo synced"
       fi
