@@ -59,7 +59,7 @@ while :; do
       continue
     fi
 
-    echo "Processing: ${hostname} | ${local}"
+    echo "Processing: ${hostname} => ${local}"
 
     # Skip if local dir doesn't exist
     [[ ! -d ${local} ]] && continue
@@ -74,9 +74,8 @@ while :; do
     if [[ -z "${COMMIT_MSG}" ]]; then
       COMMIT_MSG="Testing/Debugging"
     fi
+    
     cd ${local} && git add -A && git commit -m "${COMMIT_MSG}" && git push --set-upstream origin ${current_branch}
-
-    echo here1
 
     # Replace any fwd-slashes with underscores
     local_escaped=$(printf ${local////_})
@@ -123,13 +122,12 @@ while :; do
     fi
 
   done
-echo almostdone
+  
   # If we've been passed a commit msg - this is a once-off
   [[  ! -z "${LOCAL_DIR_FORCED}" ]] && exit
-echo "wentthrougboth"
-  ((COUNT++))
 
   # Stop if we've reached defined LIMIT
+  ((COUNT++))
   [[ $COUNT -ge $LIMIT ]] && exit
 
   sleep ${NAP_TIME}

@@ -12,7 +12,7 @@ Sync the local git repo in a remote machine with your local git repo on your hos
 ### How it works
 There are two modes:
 - __Auto__: In this mode the script will check (every 3 seconds) if the number of files (in the local dir) has changed or the total dir size has changes for each entry in the JSON list. If so, it will sync up the remote system.
-- __Manual__: In this mode, the script only runs one time and will immediately sync up the remote system for each entry in the JSON list.
+- __Manual__: In this mode, the script only runs one time and will immediately sync up the remote system for the local directory specified (which one can pass in as a script argument).
 
 <br />
 
@@ -72,7 +72,7 @@ gitsync
 
 <br />
 
-_Mnual Mode_
+_Manual Mode_
 ```bash
-gitsync "My Cool commit message"
+gitsync <local_dir> "<commit_msg>"
 ```
