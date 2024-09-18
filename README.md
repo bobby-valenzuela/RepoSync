@@ -1,5 +1,5 @@
 # GitSync
-Sync the local git repo in a remote machine with your local git repo on your host system
+Sync the local git repo in a remote machine with your local git repo on your host system.
 
 ### Scenario
 - You have a local git repo on your local system.
@@ -23,9 +23,9 @@ Each time a sync occurs, here's what happens for each entry in the JSON list:
   - Verify we're on the same branch as local. If not, we check out that branch
   - Run a git pull to sync all changes down
 - If the branch changes on the local side the branch will also change on the remote side
-- Sync does not occur on the master/main branch.
+- Sync does not occur if on the master/main branch.
 
-_Note: In auto mode, this could result in many commits as even small changes will be detected and a commit will be pushed up for every changed (and pulled down on the remote side). One could change the `NAP_TIME` global variable to ensure the the script iterates less often (default is every 3 seconds)._
+_Note: In auto mode, this could result in many commits as even small changes will be detected and a commit will be pushed up for every change (and pulled down on the remote side). One could change the `NAP_TIME` global variable to ensure the the script iterates less often (default is every 3 seconds)._
 
 <br />
 
@@ -47,8 +47,8 @@ JSON='[
     }
 ]'
 ```
-For each item in the JSON array, there are three key/value pairs:
-- dir: The name of the directory on your local/remote machine in which a git repo is located
+For each item in the JSON array, there are two key/value pairs:
+- dir: The name of the directory on your local/remote machine in which a git repo is located (dir name must be the same on local and remote).
 - hostname: The hostname as it appears in your `.ssh/config file`. This will be used to ssh into your machine and sync things up.
 
 You could even pipe a file into `JSON` if you want to save your details in a separate file.
