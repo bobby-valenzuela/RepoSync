@@ -83,6 +83,15 @@ LOCAL_DIR_FORCED=""
 if [[ ! -z "$1" ]]; then
   LOCAL_DIR_FORCED="${LOCAL_ROOT}$1"
 fi
+
+# If a single dot pased in then we are calling Gitsync from inside a repo in our list, only force this one. 
+# This way we can just call `gitsync .` from inside a repo to sync (and optinally pass in a second arg as a commit msg).
+if [[ "$1" == '.' ]]; then
+  PWD_DIR=$(basename $(pwd))
+  LOCAL_DIR_FORCED="${LOCAL_ROOT}${PWD_DIR}"
+fi
+
+
 COMMIT_MSG=$2
 
 
