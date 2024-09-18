@@ -68,7 +68,7 @@ REMOTE_ROOT='/home/ubuntu/projects/'
 <br />
 
 ### Usage
-Ideally you would place the script in `/usr/local/bin` this way you can having to call with script with the preceding `./`
+Ideally you would place the script in `/usr/local/bin` this way you can avoid having to call with script with the preceding `./`
 
 <br />
 
