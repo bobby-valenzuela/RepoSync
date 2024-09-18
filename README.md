@@ -60,7 +60,7 @@ In the script you'll also see some variables to define:
 # Root directory where all of your local git repos reside
 LOCAL_ROOT='/home/bobby/my_repos/'
 
-# Root directory where all of your local git repos reside
+# Root directory where all of your remote git repos reside
 REMOTE_ROOT='/home/ubuntu/projects/'
 ```
 
