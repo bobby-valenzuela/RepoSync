@@ -97,7 +97,6 @@ Example: `gitsync project1 "My awesome feature"`
 Alternatively, you are calling gitsync from inside a repo in your sync list (JSON variable) then you can just pass in a single dot `.` as the first argument and only the pwd will be forced to sync.
 ```bash
 gitsync .
-bash
-
-_Note: Of course you can still optionally pass in a second arg as a commit msg_ g
 ```
+_Note: Of course you can still optionally pass in a second arg as a commit msg_
+
