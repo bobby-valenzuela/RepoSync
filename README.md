@@ -29,7 +29,7 @@ _Note: In auto mode, this could result in many commits as even small changes wil
 
 <br />
 
-__Sync Method__
+_Note on Sync Method_  
 By setting the sync method to 'Rsync' an rsync will run instead of staging, comitting, and pushing code up.
 
 
