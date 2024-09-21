@@ -18,6 +18,9 @@ LOCAL_ROOT='/home/bobby/pbx/'
 # Root directory where all of your local git repos reside
 REMOTE_ROOT='/home/control-io/'
 
+# Method: Git|Rsync
+SYNC_METHOD='Rsync'
+
 # Define dirs to sync (dir must be the same on both local/remote)
 JSON='[
     {
@@ -63,6 +66,10 @@ JSON='[
     {
       "hostname":"alpha",
       "dir":"vccprograms"
+    },
+    {
+      "hostname":"alpha",
+      "dir":"dropboxv2"
     },
     {
       "hostname":"alpha",
@@ -132,11 +139,22 @@ while :; do
       continue
     fi
 
-    echo -e "\n[VALUES] Forced: ${LOCAL_DIR_FORCED} | Local: ${local} | Remote: ${remote}" 
+    echo -e "\n[VALUES] Forced: ${LOCAL_DIR_FORCED} | Method: ${SYNC_METHOD} | Local: ${local} | Remote: ${remote}" 
     
     # Skip if local dir doesn't exist
     [[ ! -d ${local} ]] && continue
+    
+    # Set any SSH vars if we're doing rsync
+    ssh_user=""
+    ssh_hostname=""
+    ssh_key=""
 
+    if [[ "${SYNC_METHOD}" == 'Rsync' ]]; then
+      ssh_user=$(grep -E -A10 "${hostname}(\b|\r|n)" ~/.ssh/config | sed -E '/^$/ q' | awk '/User/ { print $2 }')
+      ssh_hostname=$(grep -E -A10 "${hostname}(\b|\r|n)" ~/.ssh/config | sed -E '/^$/ q' | awk '/HostName/ { print $2 }')
+      ssh_key=$(grep -E -A10 "${hostname}(\b|\r|n)" ~/.ssh/config | sed -E '/^$/ q' | awk '/IdentityFile/ { print $2 }')
+    fi
+    
     # Get current git branch
     current_branch=$(cd ${local} && git branch 2>/dev/null | grep '*' | awk '{print $2}' | xargs)
 
@@ -147,8 +165,11 @@ while :; do
     if [[ -z "${COMMIT_MSG}" ]]; then
       COMMIT_MSG="Testing/Debugging"
     fi
-    
-    cd ${local} && git add -A && git commit -m "${COMMIT_MSG}" && git push --set-upstream origin ${current_branch}
+   
+    # If If git sync then commit any unsaved changes
+    if [[ "${SYNC_METHOD}" != 'Rsync' ]]; then
+      cd ${local} && git add -A && git commit -m "${COMMIT_MSG}" && git push --set-upstream origin ${current_branch}
+    fi
 
     # Replace any fwd-slashes with underscores
     local_escaped=$(printf ${local////_})
@@ -166,10 +187,22 @@ while :; do
 
       # [Initial Steps] On remote machine:
       # - Pull down latest from master
-      # - Check out branch
-      # - Pull down latest on that branch
+      # - Check out branch (if not checked out)
+      # - Pull down latest on that branch (if git sync) otherwise rsync
+      
+      # Checkout same branch
       ssh ${hostname} "cd ${remote} && git stash save && git checkout master && git checkout -b ${current_branch}" # Create branch
-      ssh ${hostname} "cd ${remote} && git checkout ${current_branch} && git branch --set-upstream-to=origin/${current_branch} ${current_branch} && git pull && echo synced"
+
+      # Run sync now
+      if [[ "${SYNC_METHOD}" == 'Rsync' ]]; then
+
+        rsync=$(rsync --delete-after --exclude "*.git" --info=progress2 -harvpE -e "ssh -i ${ssh_key}"  ${local}/ ${ssh_user}@${ssh_hostname}:${remote}/)
+      
+      else
+        # Git-based sync - pull down on remote
+        ssh ${hostname} "cd ${remote} && git checkout ${current_branch} && git branch --set-upstream-to=origin/${current_branch} ${current_branch} && git pull && echo synced"
+      
+      fi
 
     else
 
@@ -178,17 +211,29 @@ while :; do
 
         # Update size in dict
         local_dir_sizes[${local_escaped}]=${current_size}
-        
-        # If we're here done the initial steps - just pull
-        ssh ${hostname} "cd ${remote} && git branch --set-upstream-to=origin/${current_branch} ${current_branch} && git pull origin ${current_branch} && echo synced"
+       
+        # Perform sync
+        if [[ "${SYNC_METHOD}" == 'Rsync' ]]; then
+          rsync=$(rsync --delete-after --exclude "*.git" --info=progress2 -harvpE -e "ssh -i ${ssh_key}"  ${local}/ ${ssh_user}@${ssh_hostname}:${remote}/)
+        else
+          # If we're here done the initial steps - just pull
+          ssh ${hostname} "cd ${remote} && git branch --set-upstream-to=origin/${current_branch} ${current_branch} && git pull origin ${current_branch} && echo synced"
+        fi
 
       elif [[ ${local_dir_files[${local_escaped}]} -ne ${current_num_of_files} ]]; then
 
         # Update file count in dict
         local_dir_files[${local_escaped}]=${current_num_of_files}
         
-        # If we're here done the initial steps - just pull
-        ssh ${hostname} "cd ${remote} && git branch --set-upstream-to=origin/${current_branch} ${current_branch} && git pull origin ${current_branch} && echo synced"
+        # Perform sync
+        if [[ "${SYNC_METHOD}" == 'Rsync' ]]; then
+          rsync=$(rsync --delete-after --exclude "*.git" --info=progress2 -harvpE -e "ssh -i ${ssh_key}"  ${local}/ ${ssh_user}@${ssh_hostname}:${remote}/)
+        else
+          # If we're here done the initial steps - just pull
+          ssh ${hostname} "cd ${remote} && git branch --set-upstream-to=origin/${current_branch} ${current_branch} && git pull origin ${current_branch} && echo synced"
+        fi
+
+
       fi
 
     fi
