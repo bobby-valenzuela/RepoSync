@@ -104,7 +104,7 @@ COMMIT_MSG=$2
 
 # Auto-mode interation details
 COUNT=0
-NAP_TIME=5  # 5 seconds per iteration
+NAP_TIME=3  # 3 seconds per iteration
 LIMIT=1000 # 100 iterations = ~83mins
 
 
