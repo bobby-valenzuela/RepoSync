@@ -29,6 +29,12 @@ _Note: In auto mode, this could result in many commits as even small changes wil
 
 <br />
 
+__Sync Method__
+By setting the sync method to 'Rsync' an rsync will run instead of staging, comitting, and pushing code up.
+
+
+<br />
+
 ### Setup
 In the script you'll find a JSON variable like so:
 ```bash
@@ -62,6 +68,9 @@ LOCAL_ROOT='/home/bobby/my_repos/'
 
 # Root directory where all of your remote git repos reside
 REMOTE_ROOT='/home/ubuntu/projects/'
+
+# Sync Method: Git (default) or Rsync. In Rsync mode, instead of committing and pushing/pulling every time a sync runs, we will instead run a rsync
+SYNC_METHOD='/home/ubuntu/projects/'
 ```
 
 
