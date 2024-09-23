@@ -28,6 +28,10 @@ JSON='[
       "dir":"api"
     },
     {
+      "hostname":"papi",
+      "dir":"www"
+    },
+    {
       "hostname":"alpha",
       "dir":"biltong-server"
     },
