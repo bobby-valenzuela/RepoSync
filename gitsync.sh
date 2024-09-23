@@ -109,7 +109,7 @@ COMMIT_MSG=$2
 # Auto-mode interation details
 COUNT=0
 NAP_TIME=3  # 3 seconds per iteration
-LIMIT=1000 # 100 iterations = ~83mins
+LIMIT=100000 # 100 iterations = ~83mins
 
 
 # Define Associative arrays to hold file count/dir size info
