@@ -198,6 +198,8 @@ while :; do
       # Run sync now
       if [[ "${SYNC_METHOD}" == 'Rsync' ]]; then
 
+        ssh ${hostname} "cd ${remote} && git checkout -b ${current_branch} 2>/dev/null" # Create branch if necessary
+        ssh ${hostname} "cd ${remote} && git checkout ${current_branch} 2>/dev/null" # Checkout branch
         rsync=$(rsync --delete-after --exclude "*.git" --info=progress2 -harvpE -e "ssh -i ${ssh_key}"  ${local}/ ${ssh_user}@${ssh_hostname}:${remote}/)
       
       else
