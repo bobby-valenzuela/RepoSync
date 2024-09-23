@@ -194,15 +194,17 @@ while :; do
       # - Check out branch (if not checked out)
       # - Pull down latest on that branch (if git sync) otherwise rsync
       
-      # Checkout same branch
-      ssh ${hostname} "cd ${remote} && git stash save && git checkout master && git checkout -b ${current_branch}" # Create branch
 
       # Run sync now
       if [[ "${SYNC_METHOD}" == 'Rsync' ]]; then
 
+        ssh ${hostname} "cd ${remote} && git stash save" # Clear working
         rsync=$(rsync --delete-after --exclude "*.git" --info=progress2 -harvpE -e "ssh -i ${ssh_key}"  ${local}/ ${ssh_user}@${ssh_hostname}:${remote}/)
       
       else
+        # Checkout same branch
+        ssh ${hostname} "cd ${remote} && git stash save && git checkout master && git checkout -b ${current_branch}" # Create branch
+        
         # Git-based sync - pull down on remote
         ssh ${hostname} "cd ${remote} && git checkout ${current_branch} && git branch --set-upstream-to=origin/${current_branch} ${current_branch} && git pull && echo synced"
       
