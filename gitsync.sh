@@ -100,12 +100,7 @@ fi
 
 
 COMMIT_MSG=$2
-
-
-# Auto-mode interation details
-COUNT=0
 NAP_TIME=3  # 3 seconds per iteration
-LIMIT=100000 # 100 iterations = ~83mins
 
 
 # Define Associative arrays to hold file count/dir size info
@@ -265,8 +260,8 @@ while :; do
   [[  ! -z "${LOCAL_DIR_FORCED}" ]] && exit
 
   # Stop if we've reached defined LIMIT
-  ((COUNT++))
-  [[ $COUNT -ge $LIMIT ]] && exit
+  # ((COUNT++))
+  # [[ $COUNT -ge $LIMIT ]] && exit
 
   sleep ${NAP_TIME}
 
