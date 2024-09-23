@@ -198,7 +198,6 @@ while :; do
       # Run sync now
       if [[ "${SYNC_METHOD}" == 'Rsync' ]]; then
 
-
         if [[ "${current_branch}" == "${current_branch_remote}" ]]; then
           rsync=$(rsync --delete-after --exclude "*.git" --info=progress2 -harvpE -e "ssh -i ${ssh_key}"  ${local}/ ${ssh_user}@${ssh_hostname}:${remote}/)
         else
