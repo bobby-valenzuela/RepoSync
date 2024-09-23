@@ -202,8 +202,11 @@ while :; do
         if [[ "${current_branch}" == "${current_branch_remote}" ]]; then
           rsync=$(rsync --delete-after --exclude "*.git" --info=progress2 -harvpE -e "ssh -i ${ssh_key}"  ${local}/ ${ssh_user}@${ssh_hostname}:${remote}/)
         else
-          ssh ${hostname} "cd ${remote} && git checkout -- . && git clean -fd && git checkout -b ${current_branch} 2>/dev/null" # Create branch if necessary
-          ssh ${hostname} "cd ${remote} && git checkout ${current_branch} 2>/dev/null" # Checkout branch
+          # Clean any untracked files and discard any unsaved changes - then create branch if needed
+          ssh ${hostname} "cd ${remote} && git clean -fd && git checkout -- .  && git checkout -b ${current_branch} 2>/dev/null"
+
+          # Checkout branch
+          ssh ${hostname} "cd ${remote} && git checkout ${current_branch} 2>/dev/null" 
           rsync=$(rsync --delete-after --exclude "*.git" --info=progress2 -harvpE -e "ssh -i ${ssh_key}"  ${local}/ ${ssh_user}@${ssh_hostname}:${remote}/)
         fi
       
