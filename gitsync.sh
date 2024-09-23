@@ -161,6 +161,7 @@ while :; do
     
     # Get current git branch
     current_branch=$(cd ${local} && git branch 2>/dev/null | grep '*' | awk '{print $2}' | xargs)
+    current_branch_remote=$(ssh ${hostname} "cd ${remote} && git branch 2>/dev/null | grep '*' | awk '{print $2}' | xargs")
 
     # Skip if no branch found  or if master (only feature branches sync)
     [[ -z "${current_branch}" || "${current_branch}" == 'master' || "${current_branch}" == 'main' ]] && continue
@@ -194,13 +195,17 @@ while :; do
       # - Check out branch (if not checked out)
       # - Pull down latest on that branch (if git sync) otherwise rsync
       
-
       # Run sync now
       if [[ "${SYNC_METHOD}" == 'Rsync' ]]; then
 
-        ssh ${hostname} "cd ${remote} && git checkout -b ${current_branch} 2>/dev/null" # Create branch if necessary
-        ssh ${hostname} "cd ${remote} && git checkout ${current_branch} 2>/dev/null" # Checkout branch
-        rsync=$(rsync --delete-after --exclude "*.git" --info=progress2 -harvpE -e "ssh -i ${ssh_key}"  ${local}/ ${ssh_user}@${ssh_hostname}:${remote}/)
+
+        if [[ "${current_branch}" -eq "${current_branch_remote}" ]]; then
+          rsync=$(rsync --delete-after --exclude "*.git" --info=progress2 -harvpE -e "ssh -i ${ssh_key}"  ${local}/ ${ssh_user}@${ssh_hostname}:${remote}/)
+        else
+          ssh ${hostname} "cd ${remote} && git checkout -- . && git checkout -b ${current_branch} 2>/dev/null" # Create branch if necessary
+          ssh ${hostname} "cd ${remote} && git checkout ${current_branch} 2>/dev/null" # Checkout branch
+          rsync=$(rsync --delete-after --exclude "*.git" --info=progress2 -harvpE -e "ssh -i ${ssh_key}"  ${local}/ ${ssh_user}@${ssh_hostname}:${remote}/)
+        fi
       
       else
         # Checkout same branch
