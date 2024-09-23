@@ -28,10 +28,6 @@ JSON='[
       "dir":"api"
     },
     {
-      "hostname":"papi",
-      "dir":"www"
-    },
-    {
       "hostname":"alpha",
       "dir":"biltong-server"
     },
@@ -143,7 +139,7 @@ while :; do
       continue
     fi
 
-    echo -e "\n[VALUES] Forced: ${LOCAL_DIR_FORCED} | Method: ${SYNC_METHOD} | Local: ${local} | Remote: ${remote}" 
+    echo -e "\n[VALUES] Forced: ${LOCAL_DIR_FORCED} | Method: ${SYNC_METHOD} | Local: ${local} | Remote: ${remote} | Host: ${hostname}" 
     
     # Skip if local dir doesn't exist
     [[ ! -d ${local} ]] && continue
@@ -161,7 +157,7 @@ while :; do
     
     # Get current git branch
     current_branch=$(cd ${local} && git branch 2>/dev/null | grep '*' | awk '{print $2}' | xargs)
-    current_branch_remote=$(ssh ${hostname} "cd ${remote} && git branch 2>/dev/null | grep '*' | awk '{print $2}' | xargs")
+    current_branch_remote=$(ssh ${hostname} "cd ${remote} && git branch 2>/dev/null | grep '*' | awk '{print \$2}' | xargs")
 
     # Skip if no branch found  or if master (only feature branches sync)
     [[ -z "${current_branch}" || "${current_branch}" == 'master' || "${current_branch}" == 'main' ]] && continue
@@ -184,8 +180,10 @@ while :; do
     current_num_of_files=$(ls -lR ${local} | wc -l)
 
     # If no size set for this local dir or we switched branches
+    echo "[BRANCH] Current: ${current_branch} | LocalLastSaved: ${local_branch[${local_escaped}]}"
     if [[ -z "${local_dir_sizes[${local_escaped}]}" || "${current_branch}" != "${local_branch[${local_escaped}]}" ]]; then
-
+    
+      echo "Updating Branches. Notifying remote..."
       local_dir_sizes[${local_escaped}]=${current_size}
       local_dir_files[${local_escaped}]=${current_num_of_files}
       local_branch[${local_escaped}]=${current_branch}
@@ -199,14 +197,20 @@ while :; do
       if [[ "${SYNC_METHOD}" == 'Rsync' ]]; then
 
         if [[ "${current_branch}" == "${current_branch_remote}" ]]; then
+          echo "Remote already on same branch - running rsync."
           rsync=$(rsync --delete-after --exclude "*.git" --info=progress2 -harvpE -e "ssh -i ${ssh_key}"  ${local}/ ${ssh_user}@${ssh_hostname}:${remote}/)
         else
-          # Clean any untracked files and discard any unsaved changes - then create branch if needed
-          ssh ${hostname} "cd ${remote} && git clean -fd && git checkout -- .  && git checkout -b ${current_branch} 2>/dev/null"
+          echo "Remote on different branch (${current_branch_remote}). Updating remote..."
 
-          # Checkout branch
-          ssh ${hostname} "cd ${remote} && git checkout ${current_branch} 2>/dev/null" 
+          # Clean any untracked files and discard any unsaved changes - then create branch if needed
+          echo "About to run: (ssh ${hostname}'cd ${remote} && git checkout -- . && git clean -fd && git checkout -b ${current_branch}')"
+          ssh ${hostname} "cd ${remote} && git checkout -- . && git clean -fd && git checkout -- .  && git checkout -b ${current_branch}"
+
+          # Checkout branch and clean up any untracked files
+          ssh ${hostname} "cd ${remote} && git checkout ${current_branch} && git clean -fd" 
+
           rsync=$(rsync --delete-after --exclude "*.git" --info=progress2 -harvpE -e "ssh -i ${ssh_key}"  ${local}/ ${ssh_user}@${ssh_hostname}:${remote}/)
+
         fi
       
       else
@@ -217,6 +221,9 @@ while :; do
         ssh ${hostname} "cd ${remote} && git checkout ${current_branch} && git branch --set-upstream-to=origin/${current_branch} ${current_branch} && git pull && echo synced"
       
       fi
+
+      # Discard any files that are deleted
+      ssh ${hostname} "cd ${remote} && for file in \$(git status | grep 'deleted:' | awk '{print \$2}' ); do git checkout -- \$file; done"  
 
     else
 
