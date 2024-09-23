@@ -198,7 +198,6 @@ while :; do
       # Run sync now
       if [[ "${SYNC_METHOD}" == 'Rsync' ]]; then
 
-        ssh ${hostname} "cd ${remote} && git stash save" # Clear working
         rsync=$(rsync --delete-after --exclude "*.git" --info=progress2 -harvpE -e "ssh -i ${ssh_key}"  ${local}/ ${ssh_user}@${ssh_hostname}:${remote}/)
       
       else
