@@ -33,7 +33,7 @@ JSON='[
     },
     {
       "hostname":"alpha",
-      "dir":"c4"
+      "dir":"www"
     },
     {
       "hostname":"alpha",
