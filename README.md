@@ -76,7 +76,7 @@ SYNC_METHOD='/home/ubuntu/projects/'
 
 <br />
 
-### Usage
+## Usage
 Ideally you would place the script in `/usr/local/bin` this way you can avoid having to call with script with the preceding `./`
 
 <br />
@@ -94,7 +94,7 @@ gitsync
 
 <br />
 
-_Manual Mode_
+_Manual Mode_ (forcing a specific repo to sync)__  
 ```bash
 gitsync <local_dir> "<commit_msg>"
 ```
@@ -107,5 +107,29 @@ Alternatively, you are calling gitsync from inside a repo in your sync list (JSO
 ```bash
 gitsync .
 ```
-_Note: Of course you can still optionally pass in a second arg as a commit msg_
+_Note: Of course you can still optionally pass in a second arg as a commit msg. _
+```bash
+gitsync . "<commit_msg>"
+```
 
+<br />
+
+
+__Note on Rsync Method__  
+If using the Rsync method, the second script argument doesn't need to be a commit message and instead, the second (optional) script argument will be the host you want to force.  
+```bash
+gitsync . "<hostname>"
+```
+```bash
+gitsync "<my_repo>" "<hostname>"
+```  
+
+<br />
+
+_Manual Method Ongoing_  
+By default, the manual method (where repos/hosts be specifically forced) runs as a one-time sync. If you want to sync these forced values as an ongoing process, pass in `ongoing` as the third script parameter.  
+
+```bash
+gitsync "<repo>" "<commit_msg/hostname>" ongoing
+```
+```

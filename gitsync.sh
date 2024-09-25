@@ -6,7 +6,15 @@
 # Description:
 # List all of the available hosts in your SSH config file and select one to connect to from numbered list.
 
-# Requires 'jq' => sudo apt-get install jq -y
+# Requires 'jq' 
+# Check if jq is installed
+if ! command -v jq &> /dev/null
+then
+    echo "jq is not installed. Installing..."
+    sudo apt update
+    sudo apt install -y jq
+fi
+
 
 #############################################################################
 # =========== CONFIG ===========
@@ -81,26 +89,29 @@ JSON='[
     }
 ]'
 
+# 3 seconds per iteration
+NAP_TIME=3  
+
 # ======== END CONFIG ============
 #############################################################################
 
 # Checks for any arguments passed in
+COMMIT_MSG=$2
 LOCAL_DIR_FORCED=""
-
-if [[ ! -z "$1" ]]; then
-  LOCAL_DIR_FORCED="${LOCAL_ROOT}$1"
-fi
 
 # If a single dot pased in then we are calling Gitsync from inside a repo in our list, only force this one. 
 # This way we can just call `gitsync .` from inside a repo to sync (and optinally pass in a second arg as a commit msg).
 if [[ "$1" == '.' ]]; then
+
   PWD_DIR=$(basename $(pwd))
   LOCAL_DIR_FORCED="${LOCAL_ROOT}${PWD_DIR}"
+
+elif [[  ! -z "$1" ]]; then
+
+  # Anything other than a dot must be the dir itself thats being forced
+  LOCAL_DIR_FORCED="${LOCAL_ROOT}$1"
+
 fi
-
-
-COMMIT_MSG=$2
-NAP_TIME=3  # 3 seconds per iteration
 
 
 # Define Associative arrays to hold file count/dir size info
@@ -129,8 +140,13 @@ while :; do
     local="${LOCAL_ROOT}${current_dir}"
     remote="${REMOTE_ROOT}${current_dir}"
 
-    # Skip if processing a manual Update
+    # Skip if processing a manual Update and we're not on that repo
     if [[ ! -z "${LOCAL_DIR_FORCED}" && "${LOCAL_DIR_FORCED}" != "${local}" ]]; then
+      continue
+    fi
+
+    # If we're forcing an update and on Rsync, then second arg could be the hostname we want to force as well, if thats passed in, make sure we only process that host as well
+    if [[ ! -z "${LOCAL_DIR_FORCED}" && ! -z "$2" && $2 != ${hostname} ]]; then
       continue
     fi
 
@@ -230,7 +246,7 @@ while :; do
        
         # Perform sync
         if [[ "${SYNC_METHOD}" == 'Rsync' ]]; then
-          rsync=$(rsync --delete-after --exclude "*.git" --info=progress2 -harvpE -e "ssh -i ${ssh_key}"  ${local}/ ${ssh_user}@${ssh_hostname}:${remote}/)
+          rsync=$(rsync --delete-after --exclude "*.git" --info=progress2 -harvpE -e "ssh -i ${ssh_key}"  ${local}/ ${ssh_user}@${ssh_hostname}:${remote}/ 2>/dev/null)
         else
           # If we're here done the initial steps - just pull
           ssh ${hostname} "cd ${remote} && git branch --set-upstream-to=origin/${current_branch} ${current_branch} && git pull origin ${current_branch} && echo synced"
@@ -243,7 +259,7 @@ while :; do
         
         # Perform sync
         if [[ "${SYNC_METHOD}" == 'Rsync' ]]; then
-          rsync=$(rsync --delete-after --exclude "*.git" --info=progress2 -harvpE -e "ssh -i ${ssh_key}"  ${local}/ ${ssh_user}@${ssh_hostname}:${remote}/)
+          rsync=$(rsync --delete-after --exclude "*.git" --info=progress2 -harvpE -e "ssh -i ${ssh_key}"  ${local}/ ${ssh_user}@${ssh_hostname}:${remote}/ 2>/dev/null)
         else
           # If we're here done the initial steps - just pull
           ssh ${hostname} "cd ${remote} && git branch --set-upstream-to=origin/${current_branch} ${current_branch} && git pull origin ${current_branch} && echo synced"
@@ -256,8 +272,8 @@ while :; do
 
   done
   
-  # If we've been passed a commit msg - this is a once-off
-  [[  ! -z "${LOCAL_DIR_FORCED}" ]] && exit
+  # If we've been passed some args - this is a once-off unless theres a third argument saying otherwise
+  [[  ! -z "${LOCAL_DIR_FORCED}" && "$3" != "ongoing" ]] && exit
 
   # Stop if we've reached defined LIMIT
   # ((COUNT++))
