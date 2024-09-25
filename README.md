@@ -94,7 +94,7 @@ gitsync
 
 <br />
 
-_Manual Mode_ (forcing a specific repo to sync)__  
+_Manual Mode_ (forcing a specific repo to sync)  
 ```bash
 gitsync <local_dir> "<commit_msg>"
 ```
@@ -107,7 +107,7 @@ Alternatively, you are calling gitsync from inside a repo in your sync list (JSO
 ```bash
 gitsync .
 ```
-_Note: Of course you can still optionally pass in a second arg as a commit msg. _
+_Note: Of course you can still optionally pass in a second arg as a commit msg._
 ```bash
 gitsync . "<commit_msg>"
 ```
@@ -132,4 +132,4 @@ By default, the manual method (where repos/hosts be specifically forced) runs as
 ```bash
 gitsync "<repo>" "<commit_msg/hostname>" ongoing
 ```
-```
+
