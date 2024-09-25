@@ -130,6 +130,6 @@ _Manual Method Ongoing_
 By default, the manual method (where repos/hosts be specifically forced) runs as a one-time sync. If you want to sync these forced values as an ongoing process, pass in `ongoing` as the third script parameter.  
 
 ```bash
-gitsync "<repo>" "<commit_msg/hostname>" ongoing
+gitsync "<repo/.>" "<commit_msg/hostname>" ongoing
 ```
 
