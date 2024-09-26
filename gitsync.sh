@@ -33,6 +33,10 @@ SYNC_METHOD='Rsync'
 JSON='[
     {
       "hostname":"alpha",
+      "dir":"_custom_scripts"
+    },
+    {
+      "hostname":"alpha",
       "dir":"api"
     },
     {
