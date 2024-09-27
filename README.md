@@ -82,34 +82,34 @@ Ideally you would place the script in `/usr/local/bin` this way you can avoid ha
 <br />
 
 ```bash
-mv gitsync.sh /usr/local/bin/gitsync && sudo chmod 755 /usr/local/bin/gitsync
+mv reposync.sh /usr/local/bin/reposync && sudo chmod 755 /usr/local/bin/reposync
 ```
 
 <br />
 
 _Auto Mode_
 ```bash
-gitsync
+reposync
 ```
 
 <br />
 
 _Manual Mode_ (forcing a specific repo to sync)  
 ```bash
-gitsync <local_dir> "<commit_msg>"
+reposync <local_dir> "<commit_msg>"
 ```
 
-Example: `gitsync project1 "My awesome feature"`
+Example: `reposync project1 "My awesome feature"`
 
 <br />
 
-Alternatively, you are calling gitsync from inside a repo in your sync list (JSON variable) then you can just pass in a single dot `.` as the first argument and only the pwd will be forced to sync.
+Alternatively, you are calling reposync from inside a repo in your sync list (JSON variable) then you can just pass in a single dot `.` as the first argument and only the pwd will be forced to sync.
 ```bash
-gitsync .
+reposync .
 ```
 _Note: Of course you can still optionally pass in a second arg as a commit msg._
 ```bash
-gitsync . "<commit_msg>"
+reposync . "<commit_msg>"
 ```
 
 <br />
@@ -118,10 +118,10 @@ gitsync . "<commit_msg>"
 __Note on Rsync Method__  
 If using the Rsync method, the second script argument doesn't need to be a commit message and instead, the second (optional) script argument will be the host you want to force.  
 ```bash
-gitsync . "<hostname>"
+reposync . "<hostname>"
 ```
 ```bash
-gitsync "<my_repo>" "<hostname>"
+reposync "<my_repo>" "<hostname>"
 ```  
 
 <br />
@@ -130,6 +130,27 @@ _Manual Method Ongoing_
 By default, the manual method (where repos/hosts be specifically forced) runs as a one-time sync. If you want to sync these forced values as an ongoing process, pass in `ongoing` as the third script parameter.  
 
 ```bash
-gitsync "<repo/.>" "<commit_msg/hostname>" ongoing
+reposync "<repo/.>" "<commit_msg/hostname>" ongoing
 ```
 
+<br />
+
+## Service  
+If you want to install this as a systemd service you can run:  
+```bash
+sudo bash reposync --install-service
+```
+
+<br /> 
+
+Monitor the service  
+```bash
+sudo systemctl status reposync
+```
+
+<br /> 
+
+Tail the service log  
+```bash
+sudo journalctl-fu reposync
+```
