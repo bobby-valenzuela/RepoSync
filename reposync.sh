@@ -204,23 +204,38 @@ while :; do
                 exit;
             fi
 
-            read -p "Enter the user the ~/.ssh/config belongs to: " SERVICE_USER
-            
-            ssh_user=$(grep -E -A10 "${hostname}(\b|\r|n)" /home/${SERVICE_USER}/.ssh/config | sed -E '/^$/ q' | awk '/User/ { print $2 }')
-            ssh_hostname=$(grep -E -A10 "${hostname}(\b|\r|n)" /home/${SERVICE_USER}/.ssh/config | sed -E '/^$/ q' | awk '/HostName/ { print $2 }')
-            ssh_key=$(grep -E -A10 "${hostname}(\b|\r|n)" /home/${SERVICE_USER}/.ssh/config | sed -E '/^$/ q' | awk '/IdentityFile/ { print $2 }')
-            
-            PRGRM='reposync'
-            SERVICE_UNITFILE=/etc/systemd/system/
-            PROGRAM_LOCATION=$(which reposync)
-            printf "[unit]\nDescription=Repo Sync Service\n[Service]\nUser\n${SERVICE_USER}\nExecStart=$PROGRAM_LOCATION" > $SERVICE_UNITFILE$PRGRM.service
-            sudo chmod +x $PROGRAM_LOCATION
-            sudo systemctl daemon-reload
-            sudo systemctl start $PRGRM
-            sudo systemctl status $PRGRM
+            echo "Select the user the ~/.ssh/config belongs to: "
+            PS3="Enter a number: "
+            select SERVICE_USER in $(grep -v 'nologin' /etc/passwd | awk -F: '{ print $1 }' )
+            do
 
-            echo "Service installed!"
-            exit
+                ssh_user=$(grep -E -A10 "${hostname}(\b|\r|n)" /home/${SERVICE_USER}/.ssh/config | sed -E '/^$/ q' | awk '/User/ { print $2 }')
+                ssh_hostname=$(grep -E -A10 "${hostname}(\b|\r|n)" /home/${SERVICE_USER}/.ssh/config | sed -E '/^$/ q' | awk '/HostName/ { print $2 }')
+                ssh_key=$(grep -E -A10 "${hostname}(\b|\r|n)" /home/${SERVICE_USER}/.ssh/config | sed -E '/^$/ q' | awk '/IdentityFile/ { print $2 }')
+                
+                sudo cp $0 /usr/local/bin/reposync
+                
+                if [[ -e /usr/local/bin/reposync ]]; then
+                    
+                    sudo chmod +x /usr/local/bin/reposync
+                    PRGRM='reposync'
+                    SERVICE_UNITFILE=/etc/systemd/system/
+                    PROGRAM_LOCATION=$(which reposync)
+                    printf "[Unit]\nDescription=Repo Sync Service\n\n[Service]\nUser=${SERVICE_USER}\nExecStart=$PROGRAM_LOCATION\n" > $SERVICE_UNITFILE$PRGRM.service
+                    sudo chmod +x $PROGRAM_LOCATION
+                    sudo systemctl daemon-reload
+                    sudo systemctl start $PRGRM
+                    sudo systemctl status $PRGRM
+
+                    echo "Service installed!"
+                    exit
+
+                else
+                    echo "Unable to copy file to /usr/local/bin/ . Exiting."
+                fi
+
+            done
+            
 
         else
 
