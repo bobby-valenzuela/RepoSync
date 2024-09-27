@@ -93,30 +93,40 @@ JSON='[
     }
 ]'
 
+
+# ==== Additional customization ====
 # 3 seconds per iteration
-NAP_TIME=3  
+NAP_TIME=3
+
+# SSH Confile file location (full location)
+SSH_CONF=~/.ssh/config
 
 # ======== END CONFIG ============
 #############################################################################
 
 # Checks for any arguments passed in
-COMMIT_MSG=$2
-LOCAL_DIR_FORCED=""
+ARG1=$1
+ARG2=$2
 
 # If a single dot pased in then we are calling Gitsync from inside a repo in our list, only force this one. 
 # This way we can just call `gitsync .` from inside a repo to sync (and optinally pass in a second arg as a commit msg).
-if [[ "$1" == '.' ]]; then
+if [[ "$ARG1" == '.' ]]; then
 
   PWD_DIR=$(basename $(pwd))
-  LOCAL_DIR_FORCED="${LOCAL_ROOT}${PWD_DIR}"
+  ARG1="${LOCAL_ROOT}${PWD_DIR}"
 
-elif [[  ! -z "$1" ]]; then
+elif [[  ! -z "$ARG1" ]]; then
 
   # Anything other than a dot must be the dir itself thats being forced
-  LOCAL_DIR_FORCED="${LOCAL_ROOT}$1"
+  ARG1="${LOCAL_ROOT}$ARG1"
 
 fi
 
+# Exit if no ssh config file
+if [[ ! -e $SSH_CONF && "$1" != '--install-service' ]]; then
+  echo "No file found at $SSH_CONF. Exiting!"
+  exit
+fi
 
 # Define Associative arrays to hold file count/dir size info
 unset local_dir_sizes
@@ -127,6 +137,9 @@ declare -A local_dir_files
 
 unset local_branch
 declare -A local_branch
+
+unset ssh_info
+declare -A ssh_info
 
 ### Start main loop
 while :; do
@@ -145,46 +158,105 @@ while :; do
     remote="${REMOTE_ROOT}${current_dir}"
 
     # Skip if processing a manual Update and we're not on that repo
-    if [[ ! -z "${LOCAL_DIR_FORCED}" && "${LOCAL_DIR_FORCED}" != "${local}" ]]; then
+    if [[ ! -z "${ARG1}" && "${ARG1}" != "${local}" && "$1" != '--install-service' ]]; then
+      echo "Exiting here 1 ($ARG1)"
       continue
     fi
 
     # If we're forcing an update and on Rsync, then second arg could be the hostname we want to force as well, if thats passed in, make sure we only process that host as well
-    if [[ ! -z "${LOCAL_DIR_FORCED}" && ! -z "$2" && $2 != ${hostname} ]]; then
+    if [[ ! -z "${ARG1}" && ! -z "${ARG2}" && "${ARG2}" != ${hostname} && "$1" != '--install-service' ]]; then
       continue
     fi
 
-    echo -e "\n[VALUES] Forced: ${LOCAL_DIR_FORCED} | Method: ${SYNC_METHOD} | Local: ${local} | Remote: ${remote} | Host: ${hostname}" 
+    if [[ "$1" != '--install-service' ]]; then
+      echo -e "\n[VALUES] Forced Dir: ${ARG1} | Method: ${SYNC_METHOD} | Local: ${local} | Remote: ${remote} | Host: ${hostname}" 
+    fi
     
     # Skip if local dir doesn't exist
     [[ ! -d ${local} ]] && continue
     
     # Set any SSH vars if we're doing rsync
-    ssh_user=""
-    ssh_hostname=""
-    ssh_key=""
+    # See if we already have details we can use for thi hosts
+    if [[ ! -z "${ssh_info[${hostname}-user]}" ]]; then
+      
+        ssh_user="${ssh_info[${hostname}-user]}"
+        ssh_hostname="${ssh_info[${hostname}-hostname]}"
+        ssh_key="${ssh_info[${hostname}-key]}"
+    else
+        # Geth SSH file home
+        # file_owner=$(stat -c '%U' "$SSH_CONF")
+        
+        # Find the home directory of the owner from /etc/passwd
+        #user_home=$(getent passwd "$file_owner" | cut -d: -f6)
 
-    if [[ "${SYNC_METHOD}" == 'Rsync' ]]; then
-      ssh_user=$(grep -E -A10 "${hostname}(\b|\r|n)" ~/.ssh/config | sed -E '/^$/ q' | awk '/User/ { print $2 }')
-      ssh_hostname=$(grep -E -A10 "${hostname}(\b|\r|n)" ~/.ssh/config | sed -E '/^$/ q' | awk '/HostName/ { print $2 }')
-      ssh_key=$(grep -E -A10 "${hostname}(\b|\r|n)" ~/.ssh/config | sed -E '/^$/ q' | awk '/IdentityFile/ { print $2 }')
+        # SSH key must have proper home (in case we're running this file as another user)
+        #if [[ "${ssh_key}" == ~* ]]; then
+        #  ssh_home=${SSH_CONF//\/\.ssh\/config/}
+        #  ssh_key=${ssh_key//\~/$ssh_home}
+        #fi
+
+        # Check if ust installing service
+        if [[ "$1" == '--install-service' ]]; then
+        
+            # Enforce sudo/root
+            if [ "$(id -u)" -ne 0 ]; then
+                echo "User is not running as root or with sudo. Exiting..."
+                exit;
+            fi
+
+            read -p "Enter the user the ~/.ssh/config belongs to: " SERVICE_USER
+            
+            ssh_user=$(grep -E -A10 "${hostname}(\b|\r|n)" /home/${SERVICE_USER}/.ssh/config | sed -E '/^$/ q' | awk '/User/ { print $2 }')
+            ssh_hostname=$(grep -E -A10 "${hostname}(\b|\r|n)" /home/${SERVICE_USER}/.ssh/config | sed -E '/^$/ q' | awk '/HostName/ { print $2 }')
+            ssh_key=$(grep -E -A10 "${hostname}(\b|\r|n)" /home/${SERVICE_USER}/.ssh/config | sed -E '/^$/ q' | awk '/IdentityFile/ { print $2 }')
+            
+            PRGRM='reposync'
+            SERVICE_UNITFILE=/etc/systemd/system/
+            PROGRAM_LOCATION=$(which reposync)
+            printf "[unit]\nDescription=Repo Sync Service\n[Service]\nUser\n${SERVICE_USER}\nExecStart=$PROGRAM_LOCATION" > $SERVICE_UNITFILE$PRGRM.service
+            sudo chmod +x $PROGRAM_LOCATION
+            sudo systemctl daemon-reload
+            sudo systemctl start $PRGRM
+            sudo systemctl status $PRGRM
+
+            echo "Service installed!"
+            exit
+
+        else
+
+            ssh_user=$(grep -E -A10 "${hostname}(\b|\r|n)" $SSH_CONF | sed -E '/^$/ q' | awk '/User/ { print $2 }')
+            ssh_hostname=$(grep -E -A10 "${hostname}(\b|\r|n)" $SSH_CONF | sed -E '/^$/ q' | awk '/HostName/ { print $2 }')
+            ssh_key=$(grep -E -A10 "${hostname}(\b|\r|n)" $SSH_CONF | sed -E '/^$/ q' | awk '/IdentityFile/ { print $2 }')
+        
+        fi
+
+
+
+
+        # Save any SSH details in a var so we don't have to parse the confi file every time if we already have details for this host
+        ssh_info["${hostname}-user"]=$ssh_user
+        ssh_info["${hostname}-hostname"]=$ssh_hostname
+        ssh_info["${hostname}-key"]=$ssh_key
+
     fi
-    
-    # Get current git branch
-    current_branch=$(cd ${local} && git branch 2>/dev/null | grep '*' | awk '{print $2}' | xargs)
-    current_branch_remote=$(ssh ${hostname} "cd ${remote} && git branch 2>/dev/null | grep '*' | awk '{print \$2}' | xargs")
 
-    # Skip if no branch found  or if master (only feature branches sync)
-    [[ -z "${current_branch}" || "${current_branch}" == 'master' || "${current_branch}" == 'main' ]] && continue
+    # Get current git branch
+    current_branch=$(cd ${local} && git branch  | grep '*' | awk '{print $2}' | xargs)
+    current_branch_remote=$(ssh ${hostname} -F ${SSH_CONF} -i ${ssh_key} "cd ${remote} && git branch 2>/dev/null | grep '*' | awk '{print \$2}' | xargs")
+
+    # Skip if no branch found  or if master (only feature branches sync). Adding an exception for Rsync Method because we're not pushing any actual code to master in repo in this case.
+    if [[ "${SYNC_METHOD}" != 'Rsync' ]]; then
+        [[ -z "${current_branch}" || "${current_branch}" == 'master' || "${current_branch}" == 'main' ]]  && continue
+    fi
 
     # Before continuing let's push what we have up
-    if [[ -z "${COMMIT_MSG}" ]]; then
-      COMMIT_MSG="Testing/Debugging"
+    if [[ -z "${ARG2}" ]]; then
+      ARG2="Testing/Debugging"
     fi
    
     # If If git sync then commit any unsaved changes
     if [[ "${SYNC_METHOD}" != 'Rsync' ]]; then
-      cd ${local} && git add -A && git commit -m "${COMMIT_MSG}" && git push --set-upstream origin ${current_branch}
+      cd ${local} && git add -A && git commit -m "${ARG2}" && git push --set-upstream origin ${current_branch}
     fi
 
     # Replace any fwd-slashes with underscores
@@ -194,11 +266,12 @@ while :; do
     current_size=$(du -bs ${local} | awk '{print $1}')
     current_num_of_files=$(ls -lR ${local} | wc -l)
 
+    echo -e "\t[BRANCH] Current: ${current_branch} | LocalLastSaved: ${local_branch[${local_escaped}]}"
+
     # If no size set for this local dir or we switched branches
-    echo "[BRANCH] Current: ${current_branch} | LocalLastSaved: ${local_branch[${local_escaped}]}"
     if [[ -z "${local_dir_sizes[${local_escaped}]}" || "${current_branch}" != "${local_branch[${local_escaped}]}" ]]; then
     
-      echo "Updating Branches. Notifying remote..."
+      echo -e "\tUpdating Branches. Syncing remote..."
       local_dir_sizes[${local_escaped}]=${current_size}
       local_dir_files[${local_escaped}]=${current_num_of_files}
       local_branch[${local_escaped}]=${current_branch}
@@ -212,17 +285,16 @@ while :; do
       if [[ "${SYNC_METHOD}" == 'Rsync' ]]; then
 
         if [[ "${current_branch}" == "${current_branch_remote}" ]]; then
-          echo "Remote already on same branch - running rsync."
+          echo -e "\tRemote already on same branch - running rsync."
           rsync=$(rsync --delete-after --exclude "*.git" --info=progress2 -harvpE -e "ssh -i ${ssh_key}"  ${local}/ ${ssh_user}@${ssh_hostname}:${remote}/)
         else
-          echo "Remote on different branch (${current_branch_remote}). Updating remote..."
+          echo -e "\tRemote on different branch (${current_branch_remote}) While local is on (${current_branch}). Updating remote..."
 
           # Clean any untracked files and discard any unsaved changes - then create branch if needed
-          echo "About to run: (ssh ${hostname}'cd ${remote} && git checkout -- . && git clean -fd && git checkout -b ${current_branch}')"
-          ssh ${hostname} "cd ${remote} && git checkout -- . && git clean -fd && git checkout -- .  && git checkout -b ${current_branch}"
+          ssh ${hostname} -F ${SSH_CONF} -i ${ssh_key} "cd ${remote} && git checkout -- . && git clean -fd && git checkout -- .  && git checkout -b ${current_branch}"
 
           # Checkout branch and clean up any untracked files
-          ssh ${hostname} "cd ${remote} && git checkout ${current_branch} && git clean -fd" 
+          ssh ${hostname} -F ${SSH_CONF} -i ${ssh_key} "cd ${remote} && git checkout ${current_branch} && git clean -fd" 
 
           rsync=$(rsync --delete-after --exclude "*.git" --info=progress2 -harvpE -e "ssh -i ${ssh_key}"  ${local}/ ${ssh_user}@${ssh_hostname}:${remote}/)
 
@@ -230,15 +302,15 @@ while :; do
       
       else
         # Checkout same branch
-        ssh ${hostname} "cd ${remote} && git stash save && git checkout master && git checkout -b ${current_branch}" # Create branch
+        ssh ${hostname} -F ${SSH_CONF} -i ${ssh_key} "cd ${remote} && git stash save && git checkout master && git checkout -b ${current_branch}" # Create branch
         
         # Git-based sync - pull down on remote
-        ssh ${hostname} "cd ${remote} && git checkout ${current_branch} && git branch --set-upstream-to=origin/${current_branch} ${current_branch} && git pull && echo synced"
+        ssh ${hostname} -F ${SSH_CONF} -i ${ssh_key} "cd ${remote} && git checkout ${current_branch} && git branch --set-upstream-to=origin/${current_branch} ${current_branch} && git pull && echo synced"
       
       fi
 
       # Discard any files that are deleted
-      ssh ${hostname} "cd ${remote} && for file in \$(git status | grep 'deleted:' | awk '{print \$2}' ); do git checkout -- \$file; done"  
+      ssh ${hostname} -F ${SSH_CONF} -i ${ssh_key} "cd ${remote} && for file in \$(git status | grep 'deleted:' | awk '{print \$2}' ); do git checkout -- \$file; done"  
 
     else
 
@@ -253,7 +325,7 @@ while :; do
           rsync=$(rsync --delete-after --exclude "*.git" --info=progress2 -harvpE -e "ssh -i ${ssh_key}"  ${local}/ ${ssh_user}@${ssh_hostname}:${remote}/ 2>/dev/null)
         else
           # If we're here done the initial steps - just pull
-          ssh ${hostname} "cd ${remote} && git branch --set-upstream-to=origin/${current_branch} ${current_branch} && git pull origin ${current_branch} && echo synced"
+          ssh ${hostname} -F ${SSH_CONF} -i ${ssh_key} "cd ${remote} && git branch --set-upstream-to=origin/${current_branch} ${current_branch} && git pull origin ${current_branch} && echo synced"
         fi
 
       elif [[ ${local_dir_files[${local_escaped}]} -ne ${current_num_of_files} ]]; then
@@ -266,7 +338,7 @@ while :; do
           rsync=$(rsync --delete-after --exclude "*.git" --info=progress2 -harvpE -e "ssh -i ${ssh_key}"  ${local}/ ${ssh_user}@${ssh_hostname}:${remote}/ 2>/dev/null)
         else
           # If we're here done the initial steps - just pull
-          ssh ${hostname} "cd ${remote} && git branch --set-upstream-to=origin/${current_branch} ${current_branch} && git pull origin ${current_branch} && echo synced"
+          ssh ${hostname} -F ${SSH_CONF} -i ${ssh_key} "cd ${remote} && git branch --set-upstream-to=origin/${current_branch} ${current_branch} && git pull origin ${current_branch} && echo synced"
         fi
 
 
@@ -274,10 +346,12 @@ while :; do
 
     fi
 
+    echo -e "\tSync Complete!"
+
   done
   
   # If we've been passed some args - this is a once-off unless theres a third argument saying otherwise
-  [[  ! -z "${LOCAL_DIR_FORCED}" && "$3" != "ongoing" ]] && exit
+  [[  ! -z "${ARG1}" && "$3" != "ongoing" ]] && exit
 
   # Stop if we've reached defined LIMIT
   # ((COUNT++))
