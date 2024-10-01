@@ -36,6 +36,10 @@ JSON='[
       "dir":"_custom_scripts"
     },
     {
+      "hostname":"papi",
+      "dir":"www"
+    },
+    {
       "hostname":"alpha",
       "dir":"api"
     },
