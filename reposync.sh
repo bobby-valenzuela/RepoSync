@@ -310,10 +310,10 @@ while :; do
           echo -e "\tRemote on different branch (${current_branch_remote}) While local is on (${current_branch}). Updating remote..."
 
           # Clean any untracked files and discard any unsaved changes - then create branch if needed
-          ssh ${hostname} -F ${SSH_CONF} -i ${ssh_key} "cd ${remote} && git checkout -- . && git clean -fd && git checkout -- .  && git checkout -b ${current_branch}"
+          ssh ${hostname} -F ${SSH_CONF} -i ${ssh_key} "cd ${remote} && git checkout -- . && sudo git clean -fd && git checkout -- .  && git checkout -b ${current_branch}"
 
           # Checkout branch and clean up any untracked files
-          ssh ${hostname} -F ${SSH_CONF} -i ${ssh_key} "cd ${remote} && git checkout ${current_branch} && git clean -fd" 
+          ssh ${hostname} -F ${SSH_CONF} -i ${ssh_key} "cd ${remote} && git checkout ${current_branch} && sudo git clean -fd" 
 
           rsync=$(rsync --delete-after --exclude "*.git" --info=progress2 -harvpE -e "ssh -i ${ssh_key}"  ${local}/ ${ssh_user}@${ssh_hostname}:${remote}/)
 
