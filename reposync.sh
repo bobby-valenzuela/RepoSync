@@ -303,21 +303,25 @@ while :; do
       # Run sync now
       if [[ "${SYNC_METHOD}" == 'Rsync' ]]; then
 
-        if [[ "${current_branch}" == "${current_branch_remote}" ]]; then
-          echo -e "\tRemote already on same branch - running rsync."
-          rsync=$(rsync --delete-after --exclude "*.git" --info=progress2 -harvpE -e "ssh -i ${ssh_key}"  ${local}/ ${ssh_user}@${ssh_hostname}:${remote}/)
-        else
-          echo -e "\tRemote on different branch (${current_branch_remote}) While local is on (${current_branch}). Updating remote..."
+            if [[ "${current_branch}" == "${current_branch_remote}" ]]; then
+                echo -e "\tRemote already on same branch - running rsync."
+                rsync=$(rsync --delete-after --exclude "*.git" --info=progress2 -harvpE -e "ssh -i ${ssh_key}"  ${local}/ ${ssh_user}@${ssh_hostname}:${remote}/)
+            else
+                echo -e "\tRemote on different branch (${current_branch_remote}) While local is on (${current_branch}). Updating remote..."
 
-          # Clean any untracked files and discard any unsaved changes - then create branch if needed
-          ssh ${hostname} -F ${SSH_CONF} -i ${ssh_key} "cd ${remote} && git checkout -- . && sudo git clean -fd && git checkout -- .  && git checkout -b ${current_branch}"
+                # Clean any untracked files and discard any unsaved changes - then create branch if needed
+                ssh ${hostname} -F ${SSH_CONF} -i ${ssh_key} "cd ${remote} && git checkout -- .  "
+                ssh ${hostname} -F ${SSH_CONF} -i ${ssh_key} "cd ${remote} && sudo git clean -df "
+                ssh ${hostname} -F ${SSH_CONF} -i ${ssh_key} "cd ${remote} && git checkout -b ${current_branch}"
 
-          # Checkout branch and clean up any untracked files
-          ssh ${hostname} -F ${SSH_CONF} -i ${ssh_key} "cd ${remote} && git checkout ${current_branch} && sudo git clean -fd" 
+                # Checkout branch and clean up any untracked files
+                ssh ${hostname} -F ${SSH_CONF} -i ${ssh_key} "cd ${remote} && git checkout ${current_branch} " 
+                ssh ${hostname} -F ${SSH_CONF} -i ${ssh_key} "cd ${remote} && sudo git clean -df "
+                ssh ${hostname} -F ${SSH_CONF} -i ${ssh_key} "cd ${remote} && git branch --set-upstream-to=origin/${current_branch} ${current_branch} && git pull" 
 
-          rsync=$(rsync --delete-after --exclude "*.git" --info=progress2 -harvpE -e "ssh -i ${ssh_key}"  ${local}/ ${ssh_user}@${ssh_hostname}:${remote}/)
+                rsync=$(rsync --delete-after --exclude "*.git" --info=progress2 -harvpE -e "ssh -i ${ssh_key}"  ${local}/ ${ssh_user}@${ssh_hostname}:${remote}/)
 
-        fi
+            fi
       
       else
         # Checkout same branch
