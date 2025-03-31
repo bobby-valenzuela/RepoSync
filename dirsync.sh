@@ -108,19 +108,30 @@ while :; do
         echo -e "\nInitial Sync or Change of branches. Remote branch (${current_branch_remote}) Local branch (${current_branch}). Updating remote..."
 
         # Clean any untracked files and discard any unsaved changes - then create branch if needed
+        echo "[+] Removing unstaged changes..."
         ssh ${HOST} -F ${SSH_CONF} -i ${ssh_key} "cd ${FULL_REMOTE_PATH} && git checkout -- .  "
+        echo "[+] Cleaning files..."
         ssh ${HOST} -F ${SSH_CONF} -i ${ssh_key} "cd ${FULL_REMOTE_PATH} && sudo git clean -df "
+        echo "[+] Creating/Checking out branch..."
         ssh ${HOST} -F ${SSH_CONF} -i ${ssh_key} "cd ${FULL_REMOTE_PATH} && git checkout -b ${current_branch}"
 
         # Checkout branch and clean up any untracked files
+        echo "[+] Checking out branch..."
         ssh ${HOST} -F ${SSH_CONF} -i ${ssh_key} "cd ${FULL_REMOTE_PATH} && git checkout ${current_branch} " 
+        echo "[+] Cleaning files..."
         ssh ${HOST} -F ${SSH_CONF} -i ${ssh_key} "cd ${FULL_REMOTE_PATH} && sudo git clean -df "
+        echo "[+] Fetching remote branch..."
+        ssh ${HOST} -F ${SSH_CONF} -i ${ssh_key} "cd ${FULL_REMOTE_PATH} && git fetch origin ${current_branch}" 
+        echo "[+] Setting branch tracking..."
         ssh ${HOST} -F ${SSH_CONF} -i ${ssh_key} "cd ${FULL_REMOTE_PATH} && git branch --set-upstream-to=origin/${current_branch} ${current_branch} && git pull" 
 
+        echo "[+] Running rsync..."
         rsync=$(rsync --delete-after --exclude "*.git" --info=progress2 -harvpE -e "ssh -i ${ssh_key}"  ${FULL_LOCAL_PATH}/ ${ssh_user}@${ssh_hostname}:${FULL_REMOTE_PATH}/)
 
         # Discard any files that are deleted
+        echo "[+] Removing deleted files..."
         ssh ${HOST} -F ${SSH_CONF} -i ${ssh_key} "cd ${FULL_REMOTE_PATH} && for file in \$(git status | grep 'deleted:' | awk '{print \$2}' ); do git checkout -- \$file; done"  
+        echo "[+] Sync Finished."
 
     else
 
