@@ -29,11 +29,6 @@ HOST="$2"
 FULL_LOCAL_PATH=""
 FULL_REMOTE_PATH=""
 
-
-if [[ -z "$DIR" && -z "$HOST" ]];then
-    echo "Usage: $0 <dir> <host> [ongoing]"
-fi
-
 # If a single dot pased in then we are calling Gitsync from inside a repo in our list, only force this one. 
 # This way we can just call `gitsync .` from inside a repo to sync (and optinally pass in a second arg as a commit msg).
 if [[ "$DIR" == '.' ]]; then
