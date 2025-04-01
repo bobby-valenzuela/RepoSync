@@ -64,7 +64,7 @@ if [[ -z "${DIR}" || -z "${HOST}" ]]; then
 fi
 
 # Skip if local dir doesn't exist
-[[ ! -d ${FULL_LOCAL_PATH} ]] && exit
+[[ ! -d ${FULL_LOCAL_PATH} ]] && echo "Dir doesn't exist (only include dir name)" && exit
 
 ssh_user=$(grep -E -A10 "${HOST}(\b|\r|n)" $SSH_CONF | sed -E '/^$/ q' | awk '/User/ { print $2 }')
 ssh_hostname=$(grep -E -A10 "${HOST}(\b|\r|n)" $SSH_CONF | sed -E '/^$/ q' | awk '/HostName/ { print $2 }')
@@ -97,6 +97,8 @@ while :; do
     # Now that we have all keys for this entry, lets check size changes to see if sync is needed
     current_size=$(du -bs ${FULL_LOCAL_PATH} | awk '{print $1}')
     current_file_count=$(ls -lR ${FULL_LOCAL_PATH} | wc -l)
+
+    echo -e "[+] Processing... | Local Dir: ${FULL_LOCAL_PATH} | Remote Dir: ${FULL_REMOTE_PATH}"
 
     # If no size set for this local dir or we switched branches
     if [[ ${dir_size} -eq 0 || "${current_branch}" != "${current_branch_remote}" ]]; then
