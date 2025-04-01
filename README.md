@@ -154,3 +154,42 @@ Tail the service log
 ```bash
 sudo journalctl-fu reposync
 ```
+
+--- 
+
+<br />
+
+# Dirsync (slim version)
+Included in this project is a bash script named "dirsync" which is far more simple and easy to setup and use.  
+
+<br />
+
+In the script, simply fill sin the necessary configuration details:
+```bash
+# Root directory where all of your local git repos reside
+LOCAL_ROOT='/home/bobby/pbx/'
+
+# Root directory where all of your local git repos reside
+REMOTE_ROOT='/home/control-io/'
+
+# 3 seconds per iteration
+NAP_TIME=3
+
+# SSH Confile file location (full location)
+SSH_CONF=~/.ssh/config
+```
+
+
+<br />
+
+__Usage__  
+Run with the name of the local folder name and the sync will run using the mapping you've set up in the config details.  
+```bash
+dirsync.sh mylocaldir myremotevm-001
+```
+<br />
+
+You can also use the 'ongoing' argument for a contious sync  
+```bash
+dirsync.sh mylocaldir myremotevm-001 ongoing
+```
