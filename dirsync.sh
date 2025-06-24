@@ -8,10 +8,10 @@
 # =========== CONFIG ===========
 # Enter your path details here:
 
-# Root directory where all of your local git repos reside
+# Local dir where you want changes to be tracked and have these changes pushed out to our remote machine
 LOCAL_ROOT='/home/bobby/pbx/'
 
-# Root directory where all of your local git repos reside
+# Remote directory where changes are pushed out to
 REMOTE_ROOT='/home/control-io/'
 
 # 3 seconds per iteration
