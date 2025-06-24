@@ -161,15 +161,14 @@ sudo journalctl-fu reposync
 
 # Dirsync (slim version)
 Included in this project is a bash script named "dirsync" which is far more simple and easy to setup and use.  
+Instead of syncing a set of dirs, this would run a sync between a single dir (local => remote).  
 
 <br />
 
-In the script, simply fill sin the necessary configuration details:
+In the script, simply fill in the necessary configuration details:
 ```bash
-# Root directory where all of your local git repos reside
 LOCAL_ROOT='/home/bobby/pbx/'
 
-# Root directory where all of your local git repos reside
 REMOTE_ROOT='/home/control-io/'
 
 # 3 seconds per iteration
@@ -193,3 +192,7 @@ You can also use the 'ongoing' argument for a contious sync
 ```bash
 dirsync.sh mylocaldir myremotevm-001 ongoing
 ```
+
+<br />
+
+The script will look in the ~/.ssh.config to find the details to connect to "my-remotevm-001" and sync the local dir with the remote dir using a "push" method, pushing out local updates to the remote dir as changes are made. Like a sort of remote auto-save.
